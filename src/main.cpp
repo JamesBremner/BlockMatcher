@@ -2,19 +2,24 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <tuple>
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <stdlib.h> /* srand, rand */
 #include <time.h>   /* time */
 
-// define wild value for x,y,z ( assumes  real vales are always +ve )
+// define wild value for x,y,z ( assumes  real values are always +ve )
 #define WILD -1
+
+class cBlock;
+typedef std::vector<cBlock> vBlock_t;
 
 class cBlock
 {
 public:
     int x, y, z;
-    int count;      // occurence count, -1 indicates a merged block to be ignored
+    int count; // occurence count, -1 indicates a merged block to be ignored
 
     cBlock(int ix, int iy, int iz, int ic)
         : x(ix), y(iy), z(iz), count(ic)
@@ -37,13 +42,13 @@ public:
 };
 
 /// @brief Block containers organized by occurence count
-typedef std::vector<cBlock> vBlock;
-vBlock vb[8];
 
-bool cBlock::match( cBlock &other)
+std::vector<vBlock_t> Container(8);
+
+bool cBlock::match(cBlock &other)
 {
     // check for already matched blocks
-    if( count == -1 || other.count == -1 )
+    if (count == -1 || other.count == -1)
         return false;
 
     // check if merge is possible
@@ -79,6 +84,61 @@ bool cBlock::match( cBlock &other)
 
     return true;
 }
+/**
+ * @brief Match and store identical single occurence blocks
+ * 
+ * @param vb vector of blocks
+ * 
+ * The matched blocks, up to a maximum of 7
+ * are stored in the containers
+ */
+void identy(vBlock_t &vb)
+{
+    for (auto &vb : Container)
+        vb.clear();
+
+    std::map<std::tuple<int, int, int>, int> M;
+    for (auto &b : vb)
+    {
+        auto ret = M.insert(std::make_pair(
+            std::make_tuple(b.x, b.y, b.z),
+            0));
+        if (!ret.second)
+        {
+            if (ret.first->second == 6)
+            {
+                // match of 7 blocks
+                // store in 7th container
+                b.count = 7;
+                Container[7].push_back(b);
+
+                // reset match to zero occurences
+                ret.first->second = 0;
+            }
+            else
+            {
+                // match, increment occurence count
+                ret.first->second++;
+            }
+        }
+        else
+        {
+            ret.first->second = 1;
+        }
+    }
+
+    // store matches of less than 7 in their containers
+    for (auto &m : M)
+    {
+        if (!m.second)
+            continue;
+        Container[m.second].push_back(cBlock(
+            std::get<0>(m.first),
+            std::get<1>(m.first),
+            std::get<2>(m.first),
+            m.second));
+    }
+}
 
 void createSampleProblem()
 {
@@ -113,37 +173,60 @@ void createSampleProblem()
         if (k % 2)
             c = 6;
 
-        vb[c].push_back(cBlock(
+        Container[c].push_back(cBlock(
             vvinput[k][0], vvinput[k][1], vvinput[k][2], c));
     }
 }
 void display()
 {
     for (int c = 1; c <= 7; c++)
-        for (auto &b : vb[c]) {
-            if( b.count != -1 )
+        for (auto &b : Container[c])
+        {
+            if (b.count != -1)
                 b.text();
         }
 }
 
-void matchContainers( int c1, int c2 )
+void matchContainers(int c1, int c2)
 {
     // loop over blocks in container 1
-    for (auto &b1 : vb[c1])
+    for (auto &b1 : Container[c1])
     {
         // loop over blocks in container 2
-        for (auto &b2 : vb[c2])
+        for (auto &b2 : Container[c2])
         {
             // atempt match
-            if( b1.match(b2) )
-                {
-                    // succesful match
-                    // move match to 7 occurence container
-                    vb[7].push_back( b1 );
-                    b1.count = -1;
-                }
+            if (b1.match(b2))
+            {
+                // succesful match
+                // move match to 7 occurence container
+                Container[7].push_back(b1);
+                b1.count = -1;
+            }
         }
     }
+}
+
+void testIdentity()
+{
+    vBlock_t vb{
+        cBlock(0, 0, 0, 1),
+        cBlock(1, 0, 0, 1),
+        cBlock(0, 0, 0, 1),
+        cBlock(0, 0, 0, 1),
+        cBlock(0, 0, 0, 1),
+        cBlock(0, 0, 0, 1),
+        cBlock(0, 0, 0, 1),
+        cBlock(0, 0, 0, 1),
+        cBlock(0, 0, 0, 1),
+        cBlock(0, 0, 0, 1),
+        cBlock(0, 0, 0, 1),
+        cBlock(0, 0, 0, 1),
+
+    };
+    identy(vb);
+    std::cout << "\nidenty:\n";
+    display();
 }
 
 main()
@@ -151,12 +234,14 @@ main()
     createSampleProblem();
     display();
 
-    matchContainers( 1, 6 );
-    matchContainers( 2, 5 );
-    matchContainers( 3, 4 );
+    matchContainers(1, 6);
+    matchContainers(2, 5);
+    matchContainers(3, 4);
 
     std::cout << "\nresults:\n";
     display();
+
+    testIdentity();
 
     return 0;
 }
