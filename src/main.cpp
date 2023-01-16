@@ -146,26 +146,14 @@ void matchContainers( int c1, int c2 )
     }
 }
 
-void domatching()
-{
-    int c1, c2;
-    c1 = 1;
-    c2 = 6;
-    matchContainers( c1, c2 );
-    c1 = 2;
-    c2 = 5;
-    matchContainers( c1, c2 );
-    c1 = 3;
-    c2 = 4;
-    matchContainers( c1, c2 );
-}
-
 main()
 {
     createSampleProblem();
     display();
 
-    domatching();
+    matchContainers( 1, 6 );
+    matchContainers( 2, 5 );
+    matchContainers( 3, 4 );
 
     std::cout << "\nresults:\n";
     display();
