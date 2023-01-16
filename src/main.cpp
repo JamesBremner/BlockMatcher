@@ -25,7 +25,7 @@ public:
         std::cout << "( " << x << ", " << y << ", " << z << ") * " << count << "\n";
     }
 
-    /* @brief try matchoing with another block
+    /* @brief try matching with another block
        @param other block
        @return true if merge successful
 
@@ -47,11 +47,11 @@ bool cBlock::match( cBlock &other)
         return false;
 
     // check if merge is possible
-    if (x != -1 && other.x != -1 && x != other.x)
+    if (x != WILD && other.x != WILD && x != other.x)
         return false;
-    if (y != -1 && other.y != -1 && y != other.y)
+    if (y != WILD && other.y != WILD && y != other.y)
         return false;
-    if (z != -1 && other.z != -1 && z != other.z)
+    if (z != WILD && other.z != WILD && z != other.z)
         return false;
 
     // debug display of matching blocks
