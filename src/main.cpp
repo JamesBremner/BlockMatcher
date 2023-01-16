@@ -7,13 +7,14 @@
 #include <stdlib.h> /* srand, rand */
 #include <time.h>   /* time */
 
+// define wild value for x,y,z ( assumes  real vales are always +ve )
 #define WILD -1
 
 class cBlock
 {
 public:
     int x, y, z;
-    int count;
+    int count;      // occurence count, -1 indicates a merged block to be ignored
 
     cBlock(int ix, int iy, int iz, int ic)
         : x(ix), y(iy), z(iz), count(ic)
@@ -24,11 +25,19 @@ public:
         std::cout << "( " << x << ", " << y << ", " << z << ") * " << count << "\n";
     }
 
+    /* @brief try matchoing with another block
+       @param other block
+       @return true if merge successful
+
+       On merge the other block will be marked deleted
+       and the attributes of this block updated to the merged block
+    */
+
     bool match(cBlock &other);
 };
 
+/// @brief Block containers organized by occurence count
 typedef std::vector<cBlock> vBlock;
-
 vBlock vb[8];
 
 bool cBlock::match( cBlock &other)
@@ -37,6 +46,7 @@ bool cBlock::match( cBlock &other)
     if( count == -1 || other.count == -1 )
         return false;
 
+    // check if merge is possible
     if (x != -1 && other.x != -1 && x != other.x)
         return false;
     if (y != -1 && other.y != -1 && y != other.y)
@@ -44,9 +54,12 @@ bool cBlock::match( cBlock &other)
     if (z != -1 && other.z != -1 && z != other.z)
         return false;
 
+    // debug display of matching blocks
     std::cout << "\nmatch\n";
     text();
     other.text();
+
+    // do the merge
 
     count += other.count; // sum the occurences
 
@@ -60,6 +73,7 @@ bool cBlock::match( cBlock &other)
     if (z == WILD && other.z != WILD)
         z = other.z;
 
+    // debug display of merge results
     std::cout << " => ";
     text();
 
@@ -112,19 +126,19 @@ void display()
         }
 }
 
-void domatching()
+void matchContainers( int c1, int c2 )
 {
-    int c1, c2;
-    c1 = 1;
-    c2 = 6;
+    // loop over blocks in container 1
     for (auto &b1 : vb[c1])
     {
+        // loop over blocks in container 2
         for (auto &b2 : vb[c2])
         {
+            // atempt match
             if( b1.match(b2) )
                 {
                     // succesful match
-                    // move to 7 occurence container
+                    // move match to 7 occurence container
                     vb[7].push_back( b1 );
                     b1.count = -1;
                 }
@@ -132,11 +146,27 @@ void domatching()
     }
 }
 
+void domatching()
+{
+    int c1, c2;
+    c1 = 1;
+    c2 = 6;
+    matchContainers( c1, c2 );
+    c1 = 2;
+    c2 = 5;
+    matchContainers( c1, c2 );
+    c1 = 3;
+    c2 = 4;
+    matchContainers( c1, c2 );
+}
+
 main()
 {
     createSampleProblem();
     display();
+
     domatching();
+
     std::cout << "\nresults:\n";
     display();
 
